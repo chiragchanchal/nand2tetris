@@ -1,0 +1,16 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 1 (Elementary Logic Gates)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * Not gate:
+ * if (in == 0) out = 1, else out = 0
+ */
+CHIP Not {
+    IN in;
+    OUT out;
+
+    PARTS:
+    // Invert input by tying both Nand inputs together.
+    Nand(a=in, b=in, out=out);
+}

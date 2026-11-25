@@ -1,0 +1,17 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 1 (Multi-Way Logic Gates)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * 8-way demultiplexor:
+ * [a, b, c, d, e, f, g, h] = [in, 0, ..., 0] if sel == 000, etc.
+ */
+CHIP DMux8Way {
+    IN in, sel[3];
+    OUT a, b, c, d, e, f, g, h;
+
+    PARTS:
+    DMux(in=in, sel=sel[2], a=lowGroup, b=highGroup);
+    DMux4Way(in=lowGroup, sel=sel[0..1], a=a, b=b, c=c, d=d);
+    DMux4Way(in=highGroup, sel=sel[0..1], a=e, b=f, c=g, d=h);
+}

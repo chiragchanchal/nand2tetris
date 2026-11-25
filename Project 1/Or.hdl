@@ -1,0 +1,18 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 1 (Elementary Logic Gates)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * Or gate:
+ * if (a or b) out = 1, else out = 0
+ */
+CHIP Or {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    // De Morgan's law: a OR b = Nand(Not(a), Not(b)).
+    Not(in=a, out=notA);
+    Not(in=b, out=notB);
+    Nand(a=notA, b=notB, out=out);
+}

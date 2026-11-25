@@ -1,0 +1,19 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 3 (Sequential Memory Chips)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * 16-bit Program Counter (PC):
+ * Precedence: reset > load > inc > hold current value.
+ */
+CHIP PC {
+    IN in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    Inc16(in=currentVal, out=incrementedVal);
+    Mux16(a=currentVal, b=incrementedVal, sel=inc, out=afterInc);
+    Mux16(a=afterInc, b=in, sel=load, out=afterLoad);
+    Mux16(a=afterLoad, b=false, sel=reset, out=nextVal);
+    Register(in=nextVal, load=true, out=currentVal, out=out);
+}

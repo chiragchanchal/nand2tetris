@@ -1,0 +1,16 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 3 (Sequential Memory Chips)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * 1-bit register (Bit):
+ * if load(t) == 1 then out(t+1) = in(t), else out(t+1) = out(t)
+ */
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    Mux(a=storedBit, b=in, sel=load, out=nextBit);
+    DFF(in=nextBit, out=storedBit, out=out);
+}

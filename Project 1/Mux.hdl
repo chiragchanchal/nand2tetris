@@ -1,0 +1,18 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 1 (Elementary Logic Gates)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * Multiplexor:
+ * if (sel == 0) out = a, else out = b
+ */
+CHIP Mux {
+    IN a, b, sel;
+    OUT out;
+
+    PARTS:
+    Not(in=sel, out=notSel);
+    And(a=a, b=notSel, out=selectA);
+    And(a=b, b=sel, out=selectB);
+    Or(a=selectA, b=selectB, out=out);
+}

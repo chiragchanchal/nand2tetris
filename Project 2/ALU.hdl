@@ -1,0 +1,48 @@
+// Author: Chirag Chanchal (chiragchanchal)
+// Project: Nand2Tetris - Project 2 (Arithmetic Chips)
+// Remarks: Original implementation by Chirag Chanchal. All rights reserved.
+
+/**
+ * Hack Arithmetic Logic Unit (ALU):
+ * Computes one of 18 two's-complement functions on x and y controlled by
+ * zx, nx, zy, ny, f, no, and outputs status flags zr (out == 0) and ng (out < 0).
+ */
+CHIP ALU {
+    IN x[16], y[16],
+       zx, nx, zy, ny, f, no;
+    OUT out[16], zr, ng;
+
+    PARTS:
+    // Pre-process x (zero, then optionally negate bitwise)
+    Mux16(a=x, b=false, sel=zx, out=xZeroed);
+    Not16(in=xZeroed, out=xInverted);
+    Mux16(a=xZeroed, b=xInverted, sel=nx, out=xReady);
+
+    // Pre-process y (zero, then optionally negate bitwise)
+    Mux16(a=y, b=false, sel=zy, out=yZeroed);
+    Not16(in=yZeroed, out=yInverted);
+    Mux16(a=yZeroed, b=yInverted, sel=ny, out=yReady);
+
+    // Select between bitwise AND (f=0) and 16-bit addition (f=1)
+    And16(a=xReady, b=yReady, out=andResult);
+    Add16(a=xReady, b=yReady, out=addResult);
+    Mux16(a=andResult, b=addResult, sel=f, out=funcOut);
+
+    // Post-process output and extract low/high bytes plus sign bit (ng)
+    Not16(in=funcOut, out=notFuncOut);
+    Mux16(
+        a=funcOut,
+        b=notFuncOut,
+        sel=no,
+        out=out,
+        out[0..7]=lowByte,
+        out[8..15]=highByte,
+        out[15]=ng
+    );
+
+    // zr is 1 iff every bit of out is 0
+    Or8Way(in=lowByte, out=lowNonZero);
+    Or8Way(in=highByte, out=highNonZero);
+    Or(a=lowNonZero, b=highNonZero, out=anyNonZero);
+    Not(in=anyNonZero, out=zr);
+}
