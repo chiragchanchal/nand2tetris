@@ -31,7 +31,7 @@
     M=-1
 
 (START_DRAW)
-    @18671
+    @18656
     D=A
     @rowAddr
     M=D
