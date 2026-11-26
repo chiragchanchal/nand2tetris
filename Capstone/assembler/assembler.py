@@ -251,16 +251,28 @@ def format_symbols_report(
     return "\n".join(lines) + "\n"
 
 
+def resolve_input_path(asm_path: Path) -> Path:
+    """Resolve an .asm path from CWD or fall back to the assembler script directory."""
+    if asm_path.exists():
+        return asm_path
+    if not asm_path.is_absolute():
+        script_relative = Path(__file__).resolve().parent / asm_path
+        if script_relative.exists():
+            return script_relative
+    return asm_path
+
+
 def assemble_file(
     asm_path: Path,
     output_path: Path | None = None,
     symbols_path: Path | None = None,
 ) -> AssemblyResult:
     """Read an .asm file, assemble it, and write .hack and symbols output files."""
-    source_text = asm_path.read_text(encoding="utf-8")
+    resolved_path = resolve_input_path(asm_path)
+    source_text = resolved_path.read_text(encoding="utf-8-sig")
     result = assemble_source(source_text)
 
-    hack_dest = output_path or asm_path.with_suffix(".hack")
+    hack_dest = output_path or resolved_path.with_suffix(".hack")
     hack_content = "\n".join(result.machine_code) + ("\n" if result.machine_code else "")
     hack_dest.write_text(hack_content, encoding="utf-8")
 
@@ -272,12 +284,36 @@ def assemble_file(
     return result
 
 
+def prompt_for_input_file() -> Path | None:
+    """Prompt interactively for an .asm file when invoked without CLI arguments."""
+    script_dir = Path(__file__).resolve().parent
+    available = sorted(
+        {p.name for p in Path.cwd().glob("*.asm")} | {p.name for p in script_dir.glob("*.asm")}
+    )
+    if available:
+        print("Available .asm files:", ", ".join(available))
+    default_choice = "Box.asm" if "Box.asm" in available else (available[0] if available else "")
+    prompt = f"Enter .asm file path [{default_choice}]: " if default_choice else "Enter .asm file path: "
+    try:
+        entered = input(prompt).strip().strip('"').strip("'")
+    except EOFError:
+        return None
+    chosen = entered or default_choice
+    return Path(chosen) if chosen else None
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for the Hack Assembler."""
     parser = argparse.ArgumentParser(
         description="Assemble a Hack .asm file into 16-bit binary .hack machine code."
     )
-    parser.add_argument("input_file", type=Path, help="Path to the input .asm file")
+    parser.add_argument(
+        "input_file",
+        nargs="?",
+        type=Path,
+        default=None,
+        help="Path to the input .asm file",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -293,10 +329,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    input_path = args.input_file
+    if input_path is None:
+        if sys.stdin.isatty():
+            input_path = prompt_for_input_file()
+        if input_path is None:
+            parser.print_usage(sys.stderr)
+            return 1
+
+    resolved_input = resolve_input_path(input_path)
     try:
-        result = assemble_file(args.input_file, args.output, args.symbols)
+        result = assemble_file(resolved_input, args.output, args.symbols)
     except FileNotFoundError:
-        print(f"Error: input file not found: {args.input_file}", file=sys.stderr)
+        print(f"Error: input file not found: {input_path}", file=sys.stderr)
         return 1
     except ValueError as exc:
         print("Assembly failed:", file=sys.stderr)
@@ -306,7 +351,7 @@ def main(argv: list[str] | None = None) -> int:
     for warning in result.warnings:
         print(f"Warning: {warning}")
 
-    out_path = args.output or args.input_file.with_suffix(".hack")
+    out_path = args.output or resolved_input.with_suffix(".hack")
     sym_path = args.symbols or out_path.with_name("symbols.txt")
     print(f"Assembled {len(result.machine_code)} instructions -> {out_path}")
     print(f"Symbols written -> {sym_path}")
